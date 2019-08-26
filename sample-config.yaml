@@ -4,15 +4,12 @@ explorer:
   secret: "CHOOSE A SECRET DAMMIT"
 
 nuls:
-  host: 127.0.0.1
-  port: 6001
-  path: /api/
-  base_uri: "http://127.0.0.1:6001/api/"
-  chain_id: 8964
+  base_uri: "http://beta.wallet.nuls.io/api/"
+  chain_id: 2
 
 mongodb:
   uri: "mongodb://127.0.0.1"
-  database: nulsmain
+  database: nuls2test
 
 ipfs:
   enabled: True
