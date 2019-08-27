@@ -21,7 +21,8 @@ async def view_block(request):
         raise web.HTTPNotFound(text="Block not found")
 
     transactions = [item._data async
-                    for item in Transaction.find({'blockHeight': block['height']},
+                    for item in Transaction.find({'height': block['height'],
+                                                  'chainId': block['chainId']},
                                                  limit=PER_PAGE,
                                                  skip=(page-1)*PER_PAGE)]
     pagination = Pagination(page, PER_PAGE, block['txCount'])
