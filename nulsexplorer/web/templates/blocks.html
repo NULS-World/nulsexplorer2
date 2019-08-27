@@ -32,7 +32,7 @@
               {{block.height}}
             </a>
           </th>
-          <td>{{datetime.fromtimestamp(int(block.createTime/1000)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
+          <td>{{datetime.fromtimestamp(int(block.createTime)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
           <td>{{block.txCount}}</td>
           <td>{{block.size}}</td>
         </tr>
