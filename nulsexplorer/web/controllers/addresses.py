@@ -148,8 +148,8 @@ async def summarize_tx(tx, pov, node_mode=False):
     tx['value'] = None
     tx['source'] = None
     tx['target'] = None
-    inputs = tx['coinFroms']
-    outputs = tx['coinTos']
+    inputs = tx['coinFroms'] or list()
+    outputs = tx['coinTos'] or list()
 
     input_values = defaultdict(int)
     output_values = defaultdict(int)

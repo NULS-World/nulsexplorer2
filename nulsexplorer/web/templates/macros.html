@@ -22,7 +22,7 @@
       {{datetime.fromtimestamp(int(transaction.createTime)).strftime('%Y-%m-%d %H:%M:%S')}}
     </div>
   </div>
-  {% if (len(transaction.coinTos) or len(transaction.coinFroms)) %}
+  {% if (transaction.coinTos or transaction.coinFroms) %}
     <div class="card-body">
       <div class="container-fluid">
         <div class="row">

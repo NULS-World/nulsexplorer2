@@ -260,7 +260,7 @@ async def view_node(request):
         where_query = {'$or':
                         [{'$and': [
                             {'type': 7}, # yellow card
-                            {'txData.addresses': transaction['txData']['agentAddress']}
+                            {'txDataList.address': transaction['txData']['agentAddress']}
                          ]},
                          {'$and': [
                              {'type': 8}, # red card
