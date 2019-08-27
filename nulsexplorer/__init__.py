@@ -11,9 +11,18 @@ TRANSACTION_TYPES = {
     7: "yellow card",
     8: "red card",
     9: "unregister consensus node",
-    10: "business data",
-    100: "create contract",
-    101: "call contract",
-    102: "delete contract",
-    103: "transfer contract"
+    10: "cross chain",
+    11: "register chain",
+    12: "destroy chain",
+    13: "add asset to chain",
+    14: "remove asset from chain",
+    15: "create contract",
+    16: "call contract",
+    17: "delete contract",
+    18: "transfer contract",
+    19: "contract return gas",
+    20: "contract register consensus node",
+    21: "contract join consensus",
+    22: "contract cancel consensus",
+    23: "contract unregister consensus node"
 }
