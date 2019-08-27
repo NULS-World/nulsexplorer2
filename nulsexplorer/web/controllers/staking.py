@@ -17,7 +17,7 @@ async def view_staking_rewards(request):
 
     per_nuls = staking_ratio * 0.9
     per_block = staked_amount * per_nuls
-    per_day = (per_block * 6 * 60 * 24) / (consensus_size+3)
+    per_day = (per_block * 6 * 60 * 24) / (consensus_size+4)
     per_month = per_day * 30
     per_year = per_day * 365
 

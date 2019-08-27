@@ -21,7 +21,7 @@ async def calculate_ratio(qty=200):
         if not len(agents):
             continue
         agent = agents[0]
-        if agent['creditVal'] < 0.96:
+        if agent['creditValue'] < 0.96:
             continue # we got a too low score, will bork our calculation
         ratio = block['reward'] / (agent['totalDeposit']+agent['deposit'])
         ratios.append(ratio)
