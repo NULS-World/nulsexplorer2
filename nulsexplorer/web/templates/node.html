@@ -19,11 +19,11 @@
         </tr>
 
         {% if agent %}
-        {% if agent.status or (agent.creditVal != 0) %}
-          {% if agent.creditVal < -0.5 %}
+        {% if agent.status or (agent.creditValue != 0) %}
+          {% if agent.creditValue < -0.5 %}
             {% set cardclass = 'bg-danger text-white' %}
             {% set progressclass = 'bg-danger' %}
-          {% elif agent.creditVal < 0.5 %}
+          {% elif agent.creditValue < 0.5 %}
             {% set cardclass = 'bg-warning' %}
             {% set progressclass = 'bg-warning' %}
           {% else %}
@@ -39,9 +39,9 @@
           <td class="text-right">
             <div class="progress">
               <div class="progress-bar progress-bar-striped {{progressclass}}"
-                   role="progressbar" style="width: {{ ((agent.creditVal+1)/2)*100 }}%"
-                   aria-valuenow="{{ ((agent.creditVal+1)/2)*100 }}" aria-valuemin="0" aria-valuemax="100">
-                {{ agent.creditVal }}
+                   role="progressbar" style="width: {{ ((agent.creditValue+1)/2)*100 }}%"
+                   aria-valuenow="{{ ((agent.creditValue+1)/2)*100 }}" aria-valuemin="0" aria-valuemax="100">
+                {{ agent.creditValue }}
               </div>
             </div>
           </td>
@@ -49,15 +49,15 @@
         {% endif %}
         <tr>
           <td>Creation time</td>
-          <td class="text-right">{{datetime.fromtimestamp(int(transaction.time/1000)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
+          <td class="text-right">{{datetime.fromtimestamp(int(transaction.createTime)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
         </tr>
         <tr>
           <td>Commission</td>
-          <td class="text-right">{{transaction.info.commissionRate}}%</td>
+          <td class="text-right">{{transaction.txData.commissionRate}}%</td>
         </tr>
         <tr>
           <td>Bond</td>
-          <td class="text-right">{{transaction.info.deposit/100000000}} <i class="nuls"></td>
+          <td class="text-right">{{transaction.txData.deposit/100000000}} <i class="nuls"></td>
         </tr>
         {% if agent %}
         <tr>
@@ -93,24 +93,24 @@
           <tr>
             <td>Agent Address</td>
             <td class="text-right">
-              <a href="/addresses/{{transaction.info.agentAddress}}">
-                {{transaction.info.agentAddress}}
+              <a href="/addresses/{{transaction.txData.agentAddress}}">
+                {{transaction.txData.agentAddress}}
               </a>
             </td>
           </tr>
           <tr>
             <td>Packing Address</td>
             <td class="text-right">
-              <a href="/addresses/{{transaction.info.packingAddress}}">
-                {{transaction.info.packingAddress}}
+              <a href="/addresses/{{transaction.txData.packingAddress}}">
+                {{transaction.txData.packingAddress}}
               </a>
             </td>
           </tr>
           <tr>
             <td>Reward Address</td>
             <td class="text-right">
-              <a href="/addresses/{{transaction.info.rewardAddress}}">
-                {{transaction.info.rewardAddress}}
+              <a href="/addresses/{{transaction.txData.rewardAddress}}">
+                {{transaction.txData.rewardAddress}}
               </a>
             </td>
           </tr>

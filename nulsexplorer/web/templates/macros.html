@@ -19,29 +19,20 @@
       {% endif %}
     </div>
     <div class="text-right">
-      {{datetime.fromtimestamp(int(transaction.createTime/1000)).strftime('%Y-%m-%d %H:%M:%S')}}
+      {{datetime.fromtimestamp(int(transaction.createTime)).strftime('%Y-%m-%d %H:%M:%S')}}
     </div>
   </div>
-  {% if (len(transaction.outputs) or len(transaction.inputs)) %}
+  {% if (len(transaction.coinTos) or len(transaction.coinFroms)) %}
     <div class="card-body">
       <div class="container-fluid">
         <div class="row">
           <div class="col-5">
-            {% for input in transaction.inputs %}
+            {% for input in transaction.coinFroms %}
               <p>
-                {% if input.address %}
-                  <span class="float-right">{{input.value/100000000}} <i class="nuls"></i></span>
-                  <a href="/addresses/{{input.address}}" class="address">
-                    {{input.address}}
-                  </a>
-                  <a href="/transactions/{{input.fromHash}}#output{{input.fromIndex}}"
-                     title="{{input.fromHash}}"
-                     class="text-dark">
-                    ⛓
-                  </a>
-                {% else %}
-                 ❌ Error with transaction input
-                {% endif %}
+                <span class="float-right">{{input.amount/100000000}} {{input.symbol}}</span>
+                <a href="/addresses/{{input.address}}" class="address">
+                  {{input.address}}
+                </a>
               </p>
             {% endfor %}
           </div>
@@ -49,31 +40,25 @@
             ➡️
           </div>
           <div class="col-5">
-            {% for output in transaction.outputs %}
+            {% for output in transaction.coinTos %}
               <p>
-                <span class="float-right">{{output.value/100000000}} <i class="nuls"></i></span>
+                <span class="float-right">{{output.amount/100000000}} {{output.symbol}}</span>
                 <a href="/addresses/{{output.address}}" class="address">
                   {{output.address}}
                 </a>
-                {% if (output.status < 3) and
-                    ((output.lockTime == -1)
+                {% if ((output.lockTime == -1)
                      or ((output.lockTime > last_height) and (output.lockTime < 1000000000000))
-                     or (output.lockTime > (time.time()*1000))) %}
+                     or (output.lockTime > (time.time()))) %}
                 <span class="badge badge-warning">
                   locked
                   {% if (output.lockTime == -1) %}
                    consensus
                   {% elif (output.lockTime > last_height) and (output.lockTime < 1000000000000) %}
                    until {{(datetime.now() + timedelta(seconds=10*(output.lockTime-last_height))).strftime('%Y-%m-%d %H:%M')}}
-                  {% elif output.lockTime > (time.time()*1000) %}
-                    until {{datetime.fromtimestamp(int(output.lockTime/1000)).strftime('%Y-%m-%d')}}
+                  {% elif output.lockTime > (time.time()) %}
+                    until {{datetime.fromtimestamp(int(output.lockTime)).strftime('%Y-%m-%d')}}
                   {% endif %}
                 </span>
-                {% endif %}
-                {% if output.toHash %}
-                  <a href="/transactions/{{output.toHash}}">
-                     <span class="badge badge-secondary">spent ⛓</span>
-                   </a>
                 {% endif %}
               </p>
             {% endfor %}
@@ -89,7 +74,7 @@
 <tr>
   <td class="cell-20 cell-ellipsis"><a href="/transactions/{{transaction.hash}}">{{transaction.hash}}</a></td>
   <td>{{transaction.blockHeight}}</td>
-  <td>{{datetime.fromtimestamp(int(transaction.createTime/1000)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
+  <td>{{datetime.fromtimestamp(int(transaction.createTime)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
   <td class="cell-20 cell-ellipsis">
     {% if transaction.source != None %}
     <a href="/addresses/{{transaction.source}}">
@@ -107,16 +92,16 @@
   <td>
     <span class="badge {% if transaction.display_type == 'IN' %}badge-success{% elif transaction.display_type == 'OUT' %}badge-warning{% else %}badge-primary{% endif %}">
       {{transaction.display_type}}
-      {% if transaction.get('info', dict()).get('alias', None) %}{{transaction.info.alias}}{% endif %}
-      {% if transaction.get('info', dict()).get('methodName', None) %}{{transaction.info.methodName}}{% endif %}
+      {% if transaction.txData and transaction.get('txData', dict()).get('alias', None) %}{{transaction.txData.alias}}{% endif %}
+      {% if transaction.txData and transaction.get('txData', dict()).get('methodName', None) %}{{transaction.txData.methodName}}{% endif %}
     </span>
-    {% if (transaction.get('info', dict()).get('agentHash', None) or transaction.get('info', dict()).get('createTxHash', None)) and not from_node %}
-      <a href="/consensus/node/{{transaction.info.agentHash or transaction.info.createTxHash}}">
+    {% if transaction.txData and (transaction.get('txData', dict()).get('agentHash', None) or transaction.get('txData', dict()).get('createTxHash', None)) and not from_node %}
+      <a href="/consensus/node/{{transaction.txData.agentHash or transaction.txData.createTxHash}}">
          <span class="badge badge-secondary text-white">🏦</span>
        </a>
     {% endif %}
-    {% if transaction.get('info', {}).contractAddress %}
-      <a href="/addresses/contracts/{{transaction.info.contractAddress}}">
+    {% if transaction.txData and transaction.get('txData', {}).contractAddress %}
+      <a href="/addresses/contracts/{{transaction.txData.contractAddress}}">
          <span class="badge badge-secondary text-white"><i class="fe fe-cpu"></i></span>
        </a>
     {% endif %}
@@ -127,7 +112,7 @@
     {% endif %}
   </td>
   <td>{{transaction.value != None and "%0.3f"%(transaction.value/100000000) or ''}}</td>
-  <td>{{transaction.fee/100000000}}</td>
+  <td>{{transaction.fee['value']/100000000}}</td>
 </tr>
 {%- endmacro %}
 
@@ -135,7 +120,7 @@
 <tr>
   <td class="cell-20 cell-ellipsis"><a href="/transactions/{{transaction.hash}}">{{transaction.hash}}</a></td>
   <td>{{transaction.blockHeight}}</td>
-  <td>{{datetime.fromtimestamp(int(transaction.createTime/1000)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
+  <td>{{datetime.fromtimestamp(int(transaction.createTime)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
   <td class="cell-20 cell-ellipsis">
     {% if transaction.transfer.from != None %}
     <a href="/addresses/{{transaction.transfer.from}}">

@@ -237,12 +237,12 @@ async def view_node(request):
     transaction = await Transaction.find_one(hash = txhash)
     if transaction is None:
         raise web.HTTPNotFound(text="Transaction not found")
-    block = await find_block({'height': transaction['blockHeight']})
+    block = await find_block({'height': transaction['height']})
     consensus = await Consensus.collection.find_one(sort=[('height', -1)])
 
     agent = None
-    if txhash in [a['agentHash'] for a in consensus['agents']]:
-        agent = [a for a in consensus['agents'] if a['agentHash'] == txhash][0]
+    if txhash in [a['txHash'] for a in consensus['agents']]:
+        agent = [a for a in consensus['agents'] if a['txHash'] == txhash][0]
 
     stats = await get_consensus_stats(await cache_last_block_height(), hash=txhash)
     stats_heights = [s['_id'] for s in stats]
@@ -260,26 +260,26 @@ async def view_node(request):
         where_query = {'$or':
                         [{'$and': [
                             {'type': 7}, # yellow card
-                            {'info.addresses': transaction['info']['agentAddress']}
+                            {'txData.addresses': transaction['txData']['agentAddress']}
                          ]},
                          {'$and': [
                              {'type': 8}, # red card
-                             {'info.address':  transaction['info']['agentAddress']}
+                             {'txData.address':  transaction['txData']['agentAddress']}
                          ]}
                         ]}
     else:
         where_query = {'$or':
                         [{'$and': [
                             {'type': 9}, # unregister
-                            {'info.createTxHash': txhash}
+                            {'txData.createTxHash': txhash}
                          ]},
                          {'$and': [
                              {'type': 5}, # join
-                             {'info.agentHash': txhash}
+                             {'txData.agentHash': txhash}
                          ]},
                          {'$and': [
                              {'type': 6}, # leave
-                             {'info.agentHash': txhash}
+                             {'txData.agentHash': txhash}
                          ]},
                          {'$and': [
                              {'type': 4}, # register
@@ -287,7 +287,7 @@ async def view_node(request):
                          ]},
                          {'$and': [
                              {'type': 3}, # alias
-                             {'inputs.address': transaction['info']['agentAddress']}
+                             {'inputs.address': transaction['txData']['agentAddress']}
                          ]}]}
     tx_count = await Transaction.count(where_query)
 
@@ -298,7 +298,7 @@ async def view_node(request):
                                                         skip=(page-1)*per_page)]
     if "summary" in mode:
         transactions = [await summarize_tx(tx,
-                                           transaction['info']['agentAddress'],
+                                           transaction['txData']['agentAddress'],
                                            node_mode=True)
                         for tx in transactions]
 

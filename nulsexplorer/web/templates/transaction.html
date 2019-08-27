@@ -13,11 +13,11 @@
         </tr>
         <tr>
           <td>Confirms</td>
-          <td class="text-right">{{last_height - transaction.blockHeight}}</td>
+          <td class="text-right">{{last_height - transaction.height}}</td>
         </tr>
         <tr>
           <td>Transaction fee</td>
-          <td class="text-right">{{transaction.fee/100000000}} NULS</td>
+          <td class="text-right">{{transaction.fee['value']/100000000}} NULS</td>
         </tr>
         <tr>
           <td>Type</td>
@@ -33,7 +33,7 @@
         </tr>
         <tr>
           <td>Time</td>
-          <td class="text-right">{{datetime.fromtimestamp(int(transaction.time/1000)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
+          <td class="text-right">{{datetime.fromtimestamp(int(transaction.createTime/1000)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
         </tr>
         <tr>
           <td>Size</td>

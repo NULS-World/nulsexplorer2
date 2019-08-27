@@ -143,7 +143,7 @@ class BaseClass(SerializerObject):
     @classmethod
     async def count(cls, *args, **kwargs):
         #values = cls.collection.find(*args, **kwargs)
-        return await cls.collection.count(*args, **kwargs)
+        return await cls.collection.count_documents(*args, **kwargs)
 
     async def save(self):
         self._id = await self.collection.save(self._data)

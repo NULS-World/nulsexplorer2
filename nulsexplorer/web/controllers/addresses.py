@@ -148,17 +148,17 @@ async def summarize_tx(tx, pov, node_mode=False):
     tx['value'] = None
     tx['source'] = None
     tx['target'] = None
-    inputs = tx['inputs']
-    outputs = tx['outputs']
+    inputs = tx['coinFroms']
+    outputs = tx['coinTos']
 
     input_values = defaultdict(int)
     output_values = defaultdict(int)
     for i in inputs:
         if 'address' in i:
-            input_values[i['address']] += i['value']
+            input_values[i['address']] += i['amount']
     for o in outputs:
         if 'address' in o:
-            output_values[o['address']] += o['value']
+            output_values[o['address']] += o['amount']
 
     if len(input_values.keys()) > 1:
         tx['is_complex'] = True
@@ -190,29 +190,29 @@ async def summarize_tx(tx, pov, node_mode=False):
 
     elif tx['type'] in [4, 5]:
         addr = inputs[0]['address']
-        if tx['info'].get('address'):
-            addr = tx['info']['address']
+        if tx.get('txData', dict()).get('address'):
+            addr = tx['txData']['address']
 
         tx['source'] = addr
 
         for o in outputs:
             if o['lockTime'] == -1:
-                tx['value'] = o['value']
+                tx['amount'] = o['amount']
                 break
 
     elif tx['type'] in [6, 9]:
         addr = inputs[0]['address']
-        if tx['info'].get('address'):
-            addr = tx['info']['address']
+        if tx['txData'].get('address'):
+            addr = tx['txData']['address']
 
         if node_mode:
             tx['target'] = addr
         else:
             tx['source'] = addr
 
-        tx['value'] = inputs[0]['value']
+        tx['amount'] = inputs[0]['amount']
         if node_mode:
-            tx['value'] = tx['value']*-1
+            tx['amount'] = tx['amount']*-1
 
     return tx
 
@@ -418,8 +418,8 @@ async def view_address(request):
 
     if mode in ['summary', 'full-summary', 'detail']:
         where_query = {'$or':
-                       [{'outputs.address': address},
-                        {'inputs.address': address}]}
+                       [{'coinTos.address': address},
+                        {'coinFroms.address': address}]}
 
         if mode == "summary":
             where_query = {'$and': [
@@ -428,7 +428,7 @@ async def view_address(request):
             ]}
 
             if min_height is not None:
-                where_query['$and'].append({'blockHeight':
+                where_query['$and'].append({'height':
                                             {'$gt': int(min_height)}})
 
             if not request.rel_url.path.endswith('/all.json'):

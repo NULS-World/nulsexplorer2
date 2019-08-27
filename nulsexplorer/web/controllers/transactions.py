@@ -17,7 +17,7 @@ async def view_transaction(request):
     transaction = await Transaction.find_one(hash = tx_hash)
     if transaction is None:
         raise web.HTTPNotFound(text="Transaction not found")
-    block = await find_block({'height': transaction.blockHeight})
+    block = await find_block({'height': transaction.height})
 
     context = {'block': block,
             'transaction': transaction._data,
