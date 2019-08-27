@@ -3,7 +3,6 @@ from aiohttp import web, ClientSession
 from nulsexplorer.web import app
 from nulsexplorer.model.transactions import Transaction
 from nulsexplorer.model.blocks import (get_last_block_height)
-from nulsexplorer.main import api_request, api_post
 
 from .utils import (Pagination, PER_PAGE, PER_PAGE_SUMMARY,
                     cond_output)

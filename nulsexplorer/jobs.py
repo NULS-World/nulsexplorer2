@@ -15,5 +15,5 @@ LOGGER = getLogger("JOBS")
 #     await asyncio.sleep(0)
 
 def start_jobs():
-    pASS
+    pass
     # update_addresses_balances.start()
