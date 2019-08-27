@@ -36,8 +36,8 @@
           {{alias.address}}
         </a>
       </th>
-      <td class="">{{datetime.fromtimestamp(int(alias.time/1000)).strftime('%Y-%m-%d')}}</td>
-      <td class="">{{alias.blockHeight}}</td>
+      <td class="">{{datetime.fromtimestamp(int(alias.createTime)).strftime('%Y-%m-%d')}}</td>
+      <td class="">{{alias.height}}</td>
     </tr>
     {% endfor %}
   </tbody>
