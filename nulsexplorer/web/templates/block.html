@@ -22,7 +22,7 @@
         </tr>
         <tr>
           <td>Transaction fee</td>
-          <td class="text-right">{{block.fee/100000000}} <i class="nuls"></i></td>
+          <td class="text-right">{{block.totalFee/100000000}} <i class="nuls"></i></td>
         </tr>
         <tr>
           <td>Block Reward</td>
@@ -38,7 +38,7 @@
         </tr>
         <tr>
           <td>Time</td>
-          <td class="text-right">{{datetime.fromtimestamp(int(block.time/1000)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
+          <td class="text-right">{{datetime.fromtimestamp(int(block.createTime/1000)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
         </tr>
         <tr>
           <td>Size</td>

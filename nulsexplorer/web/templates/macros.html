@@ -19,7 +19,7 @@
       {% endif %}
     </div>
     <div class="text-right">
-      {{datetime.fromtimestamp(int(transaction.time/1000)).strftime('%Y-%m-%d %H:%M:%S')}}
+      {{datetime.fromtimestamp(int(transaction.createTime/1000)).strftime('%Y-%m-%d %H:%M:%S')}}
     </div>
   </div>
   {% if (len(transaction.outputs) or len(transaction.inputs)) %}
@@ -89,7 +89,7 @@
 <tr>
   <td class="cell-20 cell-ellipsis"><a href="/transactions/{{transaction.hash}}">{{transaction.hash}}</a></td>
   <td>{{transaction.blockHeight}}</td>
-  <td>{{datetime.fromtimestamp(int(transaction.time/1000)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
+  <td>{{datetime.fromtimestamp(int(transaction.createTime/1000)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
   <td class="cell-20 cell-ellipsis">
     {% if transaction.source != None %}
     <a href="/addresses/{{transaction.source}}">
@@ -135,7 +135,7 @@
 <tr>
   <td class="cell-20 cell-ellipsis"><a href="/transactions/{{transaction.hash}}">{{transaction.hash}}</a></td>
   <td>{{transaction.blockHeight}}</td>
-  <td>{{datetime.fromtimestamp(int(transaction.time/1000)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
+  <td>{{datetime.fromtimestamp(int(transaction.createTime/1000)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
   <td class="cell-20 cell-ellipsis">
     {% if transaction.transfer.from != None %}
     <a href="/addresses/{{transaction.transfer.from}}">
