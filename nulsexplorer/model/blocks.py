@@ -22,6 +22,7 @@ async def store_block(block_data, big_batch=False,
         try:
             ntxs = list()
             for transaction in txs:
+                transaction['chainId'] = block_data['header']['chainId']
                 ntxs.append(
                     await Transaction.input_txdata(transaction, batch_mode=True,
                                                    batch_transactions=batch_transactions)
@@ -35,22 +36,27 @@ async def store_block(block_data, big_batch=False,
                     await Transaction.input_txdata(transaction)
 
     if not big_batch:
-        doc_id = await model.db.blocks.insert_one(block_data)
+        doc_id = await model.db.blocks.insert_one(block_data['header'])
         # for now we forget about bulk insert as we have to do some work on it...
         # await model.db.transactions.insert_many(txs)
         return doc_id
     else:
-        batch_blocks[block_data['hash']] = block_data
+        batch_blocks[block_data['header']['hash']] = block_data['header']
 
-async def get_last_block(projection=None):
-    query = model.db.blocks.find(projection=projection).sort([('height', -1)]).limit(1)
+async def get_last_block(chain_id, projection=None):
+    query = model.db.blocks.find({
+        "chainId": chain_id}, projection=projection).sort([('height', -1)]).limit(1)
     if await query.fetch_next:
         return query.next_object()
     else:
         return None
 
-async def get_last_block_height():
-    block = await get_last_block(projection={'height': 1})
+async def get_last_block_height(chain_id=None):
+    if chain_id is None:
+        from nulsexplorer.web import app
+        chain_id = app['config'].nuls.chain_id.value
+        
+    block = await get_last_block(chain_id, projection={'height': 1})
     if block is not None:
         return block['height']
     else:
@@ -66,12 +72,17 @@ async def find_blocks(query, scrubbed=True, sort=None, limit=0):
                       'hash': 1,
                       'preHash': 1,
                       'txCount': 1,
-                      'time': 1,
+                      'createTime': 1,
                       'packingAddress': 1,
+                      'agentHash': 1,
+                      'agentId': 1,
+                      'agentAlias': 1,
                       'reward': 1,
                       'fee': 1,
                       'size': 1,
-                      'scriptSig': 1}
+                      'scriptSign': 1,
+                      'seedPacked': 1,
+                      'agentVersion': 1}
     if sort is None:
         sort = [('height', 1)]
 
