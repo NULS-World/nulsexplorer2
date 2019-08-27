@@ -220,19 +220,18 @@ async def summarize_tx(tx, pov, node_mode=False):
 async def get_aliases():
     aggregate = Transaction.collection.aggregate([
          {'$match': {'type': 3}},
-         {'$group': {'_id': '$info.alias',
-                     'address': {'$last': {'$arrayElemAt':
-                                           ['$inputs.address', 0]}},
-                     'time': {'$last': '$time'},
-                     'blockHeight': {'$last': '$blockHeight'}}},
+         {'$group': {'_id': '$txData.alias',
+                     'address': {'$last': '$txData.address'},
+                     'createTime': {'$last': '$createTime'},
+                     'height': {'$last': '$height'}}},
          {'$sort': {'_id': 1}},
          {'$addFields': {'alias': '$_id'}},
          {'$project': {
             '_id': 0,
             'alias': 1,
             'address': 1,
-            'time': 1,
-            'blockHeight': 1}}
+            'createTime': 1,
+            'height': 1}}
         ])
     return [item async for item in aggregate]
 
@@ -276,7 +275,7 @@ async def address_list(request):
 
     from nulsexplorer.model import db
     last_height = await get_last_block_height()
-    total_addresses = await db.cached_unspent.count()
+    total_addresses = await db.cached_unspent.count_documents({})
 
     per_page = PER_PAGE_SUMMARY
     sort = [('unspent_value', -1)]
@@ -395,7 +394,7 @@ async def view_address(request):
     last_height = await get_last_block_height()
     address = request.match_info['address']
     mode = request.match_info.get('mode', 'summary')
-    sort = [('time', -1)]
+    sort = [('createTime', -1)]
     min_height = request.query.get('min_height', None)
 
     if mode not in ['summary', 'full-summary', 'token-summary', 'detail']:
@@ -406,7 +405,7 @@ async def view_address(request):
 
     if request.rel_url.path.endswith('/all.json'):
         per_page = 10000
-        sort = [('type', -1), ('time', -1)]
+        sort = [('type', -1), ('createTime', -1)]
 
     page = int(request.match_info.get('page', '1'))
 
@@ -461,7 +460,7 @@ async def view_address(request):
                 {'info.result.tokenTransfers.from': address},
                 {'info.result.tokenTransfers.to': address},
             ]}},
-            {'$sort': {'time': -1}},
+            {'$sort': {'createTime': -1}},
             {'$skip': (page-1)*per_page},
             {'$limit': per_page},
             {'$project': {
@@ -469,7 +468,7 @@ async def view_address(request):
              'hash': 1,
              'blockHeight': 1,
              'fee': 1,
-             'time': 1,
+             'createTime': 1,
              'remark': 1,
              'gasUsed': '$info.result.gasUsed',
              'price': '$info.result.price',
@@ -517,7 +516,7 @@ async def address_available_outputs(request):
     """
     last_height = await get_last_block_height()
     check_time = datetime.datetime.now()
-    db_time = int(time.mktime(check_time.timetuple())*1000)
+    db_time = int(time.mktime(check_time.timetuple()))
     address = request.match_info['address']
     all_txs = Transaction.collection.find(
             {'outputs.status': {'$lt': 3},
@@ -589,7 +588,7 @@ async def address_consensus(request):
     positions = []
 
     async for tx in Transaction.collection.find(where_query,
-                                                sort=[('time', 1)]):
+                                                sort=[('createTime', 1)]):
         info = tx.get('info', {})
         if tx['type'] == 4:  # registering a consensus node
             position = {
