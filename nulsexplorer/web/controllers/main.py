@@ -2,9 +2,7 @@ import pkg_resources
 import aiohttp_jinja2
 
 from aiocache import cached, SimpleMemoryCache
-from aiohttp import web, ClientSession
-
-from nulsexplorer.main import api_post, request_block
+from aiohttp import web
 from nulsexplorer.web import app
 from nulsexplorer.model.consensus import Consensus
 from nulsexplorer.model.transactions import Transaction
