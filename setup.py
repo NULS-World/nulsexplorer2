@@ -20,7 +20,7 @@ setup(name='nulsexplorer',
       install_requires=[
           # -*- Extra requirements: -*-
           "pymongo",
-          "motor==1.2.2",
+          "motor",
           "aiohttp>=3.3.2",
           "aiohttp-session[secure]",
           "aiohttp-jinja2",
@@ -29,9 +29,8 @@ setup(name='nulsexplorer',
           "aiocron",
           "pyyaml",
           "configmanager",
-          "aioipfs",
-          "uvloop"#,
-          #"secp256k1"
+          "uvloop",
+          "jsonrpc-async"
       ],
       entry_points={
           'console_scripts':
