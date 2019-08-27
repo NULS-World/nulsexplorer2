@@ -14,7 +14,7 @@ def get_defaults():
           'chain_id': 2
         },
         'mongodb': {
-          'uri': 'mongodb://127.0.0.1:27006',
+          'uri': 'mongodb://127.0.0.1:27017',
           'database': 'nuls2'
         },
         'mail': {

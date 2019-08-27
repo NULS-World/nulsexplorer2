@@ -8,7 +8,7 @@ nuls:
   chain_id: 2
 
 mongodb:
-  uri: "mongodb://127.0.0.1"
+  uri: "mongodb://127.0.0.1:27017"
   database: nuls2test
 
 ipfs:
