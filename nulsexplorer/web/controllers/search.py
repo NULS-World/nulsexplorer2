@@ -13,8 +13,8 @@ async def search(request):
     elif (await Transaction.count({'hash': query})):
         raise web.HTTPFound('/transactions/%s' % query)
     elif (await Transaction.count({'$or':
-                    [{'outputs.address': query},
-                     {'inputs.address': query}]})):
+                    [{'coinFroms.address': query},
+                     {'coinTos.address': query}]})):
         raise web.HTTPFound('/addresses/%s' % query)
     else:
         raise web.HTTPNotFound(text="Nothing found for that search")
