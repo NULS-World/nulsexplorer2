@@ -213,6 +213,12 @@ async def summarize_tx(tx, pov, node_mode=False):
         tx['amount'] = inputs[0]['amount']
         if node_mode:
             tx['amount'] = tx['amount']*-1
+            
+    else:
+        if len(inputs) == 1:
+            tx['source'] = inputs[0].get('address')
+        if len(outputs) == 1:
+            tx['target'] = outputs[0].get('address')
 
     return tx
 

@@ -95,7 +95,7 @@
       {% if transaction.txData and transaction.get('txData', dict()).get('alias', None) %}{{transaction.txData.alias}}{% endif %}
       {% if transaction.txData and transaction.get('txData', dict()).get('methodName', None) %}{{transaction.txData.methodName}}{% endif %}
     </span>
-    {% if transaction.txData and (transaction.get('txData', dict()).get('agentHash', None) or transaction.get('txData', dict()).get('createTxHash', None)) and not from_node %}
+    {% if transaction.txData and transaction.get('txData', dict()).get('agentHash', None) and not from_node %}
       <a href="/consensus/node/{{transaction.txData.agentHash or transaction.txData.createTxHash}}">
          <span class="badge badge-secondary text-white">🏦</span>
        </a>
