@@ -122,16 +122,16 @@
   <td>{{transaction.blockHeight}}</td>
   <td>{{datetime.fromtimestamp(int(transaction.createTime)).strftime('%Y-%m-%d %H:%M:%S')}}</td>
   <td class="cell-20 cell-ellipsis">
-    {% if transaction.transfer.from != None %}
-    <a href="/addresses/{{transaction.transfer.from}}">
-      {{transaction.transfer.from}}
+    {% if transaction.transfer.fromAddress != None %}
+    <a href="/addresses/{{transaction.transfer.fromAddress}}">
+      {{transaction.transfer.fromAddress}}
     </a>
     {% endif %}
   </td>
   <td class="cell-20 cell-ellipsis">
-    {% if transaction.transfer.to != None %}
-    <a href="/addresses/{{transaction.transfer.to}}">
-      {{transaction.transfer.to}}
+    {% if transaction.transfer.toAddress != None %}
+    <a href="/addresses/{{transaction.transfer.toAddress}}">
+      {{transaction.transfer.toAddress}}
     </a>
     {% endif %}
   </td>
@@ -152,7 +152,7 @@
        </a>
     </td>
   {% endif %}
-  <td>{{transaction.totalFee/100000000}}</td>
+  <td>{{int(transaction.totalFee)/100000000}}</td>
 </tr>
 {%- endmacro %}
 

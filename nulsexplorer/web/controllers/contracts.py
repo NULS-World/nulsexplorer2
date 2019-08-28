@@ -94,7 +94,7 @@ async def view_contract(request):
             where_query['type'] = 16
         transactions = [tx async for tx in
                         Transaction.collection.find(where_query,
-                                                    sort=[('time', -1)],
+                                                    sort=[('createTime', -1)],
                                                     limit=per_page,
                                                     skip=(page-1)*per_page)]
         pagination_count = await Transaction.count(where_query)
@@ -159,7 +159,7 @@ async def view_contract(request):
                 'txData.resultInfo.tokenTransfers': {'$exists': True, '$ne': []}
             }},
             {'$unwind': '$txData.resultInfo.tokenTransfers'},
-            {'$sort': {'time': -1}},
+            {'$sort': {'createTime': -1}},
             {'$skip': (page-1)*per_page},
             {'$limit': per_page},
             {'$project': {
@@ -167,7 +167,7 @@ async def view_contract(request):
              'hash': 1,
              'blockHeight': 1,
              'fee': 1,
-             'time': 1,
+             'createTime': 1,
              'remark': 1,
              'gasUsed': '$txData.resultInfo.gasUsed',
              'price': '$txData.resultInfo.price',
