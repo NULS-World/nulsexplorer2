@@ -39,24 +39,24 @@ async def view_transaction_list(request):
     address = request.query.get('address', None)
     tx_type = request.query.get('type', None)
     mask_by_address = request.query.get('maskByAddress', None)
-    date_filters = prepare_date_filters(request, 'time')
-    block_height_filters = prepare_block_height_filters(request, 'blockHeight')
+    date_filters = prepare_date_filters(request, 'createTime')
+    block_height_filters = prepare_block_height_filters(request, 'height')
 
     if address is not None:
         filters.append({
             '$or': [
-                {'outputs.address': address},
-                {'inputs.address': address}
+                {'coinFroms.address': address},
+                {'coinTos.address': address}
             ]
         })
     else:
         tx_from = request.query.get('from', None)
         if tx_from is not None:
-            filters.append({'inputs.address': tx_from})
+            filters.append({'coinFroms.address': tx_from})
 
         tx_to = request.query.get('to', None)
         if tx_to is not None:
-            filters.append({'outputs.address': tx_to})
+            filters.append({'coinTos.address': tx_to})
 
     if tx_type is not None:
         filters.append({'type': int(tx_type)})
@@ -67,13 +67,6 @@ async def view_transaction_list(request):
     if block_height_filters is not None:
         filters.append(block_height_filters)
 
-    if request.query.get('business_ipfs', None):
-        # to get all busines data or ipfs related data
-        filters.append({'$or': [
-            {'info.type': 'ipfs'},
-            {'type': 10}
-        ]})
-
     if len(filters) > 0:
         find_filters = {'$and': filters} if len(filters) > 1 else filters[0]
 
@@ -83,7 +76,7 @@ async def view_transaction_list(request):
     if pagination_skip is None:
         pagination_skip = 0
 
-    sort = [('blockHeight', int(request.query.get('sort_order', '-1')))]
+    sort = [('height', int(request.query.get('sort_order', '-1')))]
 
     transactions = [tx async for tx
                     in Transaction.collection.find(find_filters, limit=pagination_per_page,
@@ -91,8 +84,8 @@ async def view_transaction_list(request):
 
     if mask_by_address is not None:
         for tx in transactions:
-            tx['inputs'] = list(filter(lambda i: i['address'] == mask_by_address, tx['inputs']))
-            tx['outputs'] = list(filter(lambda o: o['address'] == mask_by_address, tx['outputs']))
+            tx['coinFroms'] = list(filter(lambda i: i['address'] == mask_by_address, tx['coinFroms']))
+            tx['coinTos'] = list(filter(lambda o: o['address'] == mask_by_address, tx['coinTos']))
 
     context = {
         'transactions': transactions,
@@ -122,16 +115,16 @@ app.router.add_get('/transactions/page/{page}.json', view_transaction_list)
 async def get_history(period, min_time=None):
     if min_time is None:
         # if we don't have a min time, assume 30 days.
-        min_time = (int(time.time())-(60*60*24*30))*1000
-    max_time = int(time.time())*1000
+        min_time = (int(time.time())-(60*60*24*30))
+    max_time = int(time.time())
 
     stages = [
-        {'$sort': {'time': -1}},
+        {'$sort': {'createTime': -1}},
         {'$match': {
-            'time': {'$gt': min_time}
+            'createTime': {'$gt': min_time}
         }},
         {'$match': {
-            'time': {'$lt': max_time}
+            'createTime': {'$lt': max_time}
         }}
     ]
 
@@ -148,8 +141,8 @@ async def get_history(period, min_time=None):
 
     stages.append({
         '$addFields': {
-           'totalInputs': { '$sum': "$inputs.value" } ,
-           'totalOutputs': { '$sum': "$outputs.value" }
+           'totalInputs': { '$sum': "$coinFroms.amount" } ,
+           'totalOutputs': { '$sum': "$coinTos.amount" }
         }
     })
 
@@ -159,7 +152,7 @@ async def get_history(period, min_time=None):
                 "$dateToString": {
                     "format": dateformat,
                     "date": {
-                        "$toDate": '$time'
+                        "$toDate": {'$multiply': ['$createTime', 1000]}
                     }
                 }
             },

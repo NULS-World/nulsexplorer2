@@ -292,7 +292,7 @@ async def view_node(request):
     tx_count = await Transaction.count(where_query)
 
     transactions = [tx._data async for tx in Transaction.find(where_query,
-                                                        sort='time',
+                                                        sort='createTime',
                                                         sort_order=-1,
                                                         limit=per_page,
                                                         skip=(page-1)*per_page)]
