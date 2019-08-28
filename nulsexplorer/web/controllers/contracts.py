@@ -24,19 +24,19 @@ async def contracts_list(request):
     only_tokens = bool(int(request.query.get('tokens', 0)))
 
     contracts_query = {
-        'type': 100,
-        'info.result.success': True
+        'type': 15,
+        'txData.resultInfo.success': True
     }
-    sort = [('blockHeight', -1)]
+    sort = [('height', -1)]
 
     if (only_tokens):
-        sort = [('info.result.symbol', 1)]
+        sort = [('txData.result.symbol', 1)]
         contracts_query.update({
-            'info.result.name': {'$ne': None},
-            'info.result.symbol': {'$ne': None}
+            'txData.tokenName': {'$ne': None},
+            'txData.symbol': {'$ne': None}
         })
 
-    total_contracts = await Transaction.collection.count(contracts_query)
+    total_contracts = await Transaction.collection.count_documents(contracts_query)
     pagination = Pagination(page, PER_PAGE_SUMMARY, total_contracts)
 
     contract_creations = Transaction.collection.find(contracts_query,
@@ -71,8 +71,8 @@ async def view_contract(request):
     address = request.match_info['address']
     mode = request.match_info.get('mode', 'summary')
     create_tx = await Transaction.collection.find_one({
-        'type': 100,
-        'info.contractAddress': address
+        'type': 15,
+        'txData.contractAddress': address
     })
 
     if create_tx is None:
@@ -83,15 +83,15 @@ async def view_contract(request):
     pagination_item = 'transactions'
 
     where_query = {'$or':
-                    [{'info.contractAddress': address},
-                     {'outputs.address': address},
-                     {'inputs.address': address}]}
+                    [{'txData.contractAddress': address},
+                     {'txFroms.address': address},
+                     {'toTos.address': address}]}
     transactions = []
     pagination_count = 0
     holders = []
     if (mode in ['summary', 'calls-summary']):
         if mode == "calls-summary":
-            where_query['type'] = 101
+            where_query['type'] = 16
         transactions = [tx async for tx in
                         Transaction.collection.find(where_query,
                                                     sort=[('time', -1)],
@@ -105,18 +105,18 @@ async def view_contract(request):
         pagination_item = 'holders'
         holders = Transaction.collection.aggregate([
             {'$match': {
-                'info.contractAddress': address,
-                'info.result.tokenTransfers': {'$exists': True, '$ne': []}
+                'txData.contractAddress': address,
+                'txData.resultInfo.tokenTransfers': {'$exists': True, '$ne': []}
             }},
-            {'$unwind': '$info.result.tokenTransfers'},
+            {'$unwind': '$txData.resultInfo.tokenTransfers'},
             {'$addFields': {
              'transfers': {'$concatArrays': [
-                [['$info.result.tokenTransfers.from',
+                [['$txData.resultInfo.tokenTransfers.fromAddress',
                   {"$multiply": [-1,
                                  {'$toDouble':
-                                  "$info.result.tokenTransfers.value"}]}]],
-                [['$info.result.tokenTransfers.to',
-                  {'$toDouble': "$info.result.tokenTransfers.value"}]],
+                                  "$txData.resultInfo.tokenTransfers.value"}]}]],
+                [['$txData.resultInfo.tokenTransfers.toAddress',
+                  {'$toDouble': "$txData.resultInfo.tokenTransfers.value"}]],
                 ]}
              }},
             {'$unwind': '$transfers'},
@@ -139,12 +139,12 @@ async def view_contract(request):
 
         total_count = Transaction.collection.aggregate([
             {'$match': {
-                'info.contractAddress': address,
-                'info.result.tokenTransfers': {'$exists': True, '$ne': []}
+                'txData.contractAddress': address,
+                'txData.resultInfo.tokenTransfers': {'$exists': True, '$ne': []}
             }},
-            {'$unwind': '$info.result.tokenTransfers'},
+            {'$unwind': '$txData.resultInfo.tokenTransfers'},
             {"$group": {
-                "_id": "$info.result.tokenTransfers.to"
+                "_id": "$txData.resultInfo.tokenTransfers.toAddress"
             }},
             {'$group': {'_id': None, 'count':
                         {'$sum': 1}}}
@@ -155,35 +155,35 @@ async def view_contract(request):
     elif mode == "transfer-summary":
         transactions = Transaction.collection.aggregate([
             {'$match': {
-                'info.contractAddress': address,
-                'info.result.tokenTransfers': {'$exists': True, '$ne': []}
+                'txData.contractAddress': address,
+                'txData.resultInfo.tokenTransfers': {'$exists': True, '$ne': []}
             }},
-            {'$unwind': '$info.result.tokenTransfers'},
+            {'$unwind': '$txData.resultInfo.tokenTransfers'},
             {'$sort': {'time': -1}},
             {'$skip': (page-1)*per_page},
             {'$limit': per_page},
             {'$project': {
-             'transfer': '$info.result.tokenTransfers',
+             'transfer': '$txData.resultInfo.tokenTransfers',
              'hash': 1,
              'blockHeight': 1,
              'fee': 1,
              'time': 1,
              'remark': 1,
-             'gasUsed': '$info.result.gasUsed',
-             'price': '$info.result.price',
-             'totalFee': '$info.result.totalFee',
-             'nonce': '$info.result.nonce'
+             'gasUsed': '$txData.resultInfo.gasUsed',
+             'price': '$txData.resultInfo.price',
+             'totalFee': '$txData.resultInfo.totalFee',
+             'nonce': '$txData.resultInfo.nonce'
              }}
         ])
         transactions = [b async for b in transactions]
 
         total_count = Transaction.collection.aggregate([
             {'$match': {
-                'info.contractAddress': address,
-                'info.result.tokenTransfers': {'$exists': True, '$ne': []}
+                'txData.contractAddress': address,
+                'txData.resultInfo.tokenTransfers': {'$exists': True, '$ne': []}
             }},
             {'$group': {'_id': None, 'count':
-                        {'$sum': {'$size': '$info.result.tokenTransfers'}}}}
+                        {'$sum': {'$size': '$txData.resultInfo.tokenTransfers'}}}}
         ])
         if await total_count.fetch_next:
             pagination_count = total_count.next_object()['count']
