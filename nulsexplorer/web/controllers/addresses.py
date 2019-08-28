@@ -194,11 +194,7 @@ async def summarize_tx(tx, pov, node_mode=False):
             addr = tx['txData']['address']
 
         tx['source'] = addr
-
-        for o in outputs:
-            if o['lockTime'] == -1:
-                tx['amount'] = o['amount']
-                break
+        tx['value'] = inputs[0]['amount']
 
     elif tx['type'] in [6, 9]:
         addr = inputs[0]['address']
@@ -210,9 +206,9 @@ async def summarize_tx(tx, pov, node_mode=False):
         else:
             tx['source'] = addr
 
-        tx['amount'] = inputs[0]['amount']
+        tx['value'] = inputs[0]['amount']
         if node_mode:
-            tx['amount'] = tx['amount']*-1
+            tx['value'] = tx['amount']*-1
             
     else:
         if len(inputs) == 1:
@@ -343,32 +339,32 @@ async def get_address_tokens(holder_address):
     holdings = Transaction.collection.aggregate([
         {'$match': {
             '$and': [
-                {'type': {'$in': [100, 101]}},
+                {'type': {'$in': [15,16]}},
                 {'$or': [
-                    {'info.result.tokenTransfers.from': holder_address},
-                    {'info.result.tokenTransfers.to': holder_address},
+                    {'txData.resultInfo.tokenTransfers.fromAddress': holder_address},
+                    {'txData.resultInfo.tokenTransfers.toAddress': holder_address},
                 ]}
             ]
         }},
-        {'$unwind': '$info.result.tokenTransfers'},
+        {'$unwind': '$txData.resultInfo.tokenTransfers'},
         {'$addFields': {
          'transfers': {'$concatArrays': [
-            [['$info.result.tokenTransfers.from',
+            [['$txData.resultInfo.tokenTransfers.fromAddress',
               {"$multiply": [-1,
                              {'$toDouble':
-                              "$info.result.tokenTransfers.value"}]}]],
-            [['$info.result.tokenTransfers.to',
-              {'$toDouble': "$info.result.tokenTransfers.value"}]],
+                              "$txData.resultInfo.tokenTransfers.value"}]}]],
+            [['$txData.resultInfo.tokenTransfers.toAddress',
+              {'$toDouble': "$txData.resultInfo.tokenTransfers.value"}]],
             ]}
          }},
         {'$unwind': '$transfers'},
         {'$project': {
             'transfers': 1,
             'holder': {'$arrayElemAt': ["$transfers", 0]},
-            'contractAddress': '$info.result.tokenTransfers.contractAddress',
-            'name': '$info.result.tokenTransfers.name',
-            'symbol': '$info.result.tokenTransfers.symbol',
-            'decimals': '$info.result.tokenTransfers.decimals'
+            'contractAddress': '$txData.resultInfo.tokenTransfers.contractAddress',
+            'name': '$txData.resultInfo.tokenTransfers.name',
+            'symbol': '$txData.resultInfo.tokenTransfers.symbol',
+            'decimals': '$txData.resultInfo.tokenTransfers.decimals'
         }},
         {'$match': {
             'holder': holder_address  # we only keep the target holder
@@ -457,29 +453,29 @@ async def view_address(request):
             {'$match': {'$and': [
                 {'type': {'$in': [100, 101]}},
                 {'$or': [
-                    {'info.result.tokenTransfers.from': address},
-                    {'info.result.tokenTransfers.to': address},
+                    {'txData.resultInfo.tokenTransfers.from': address},
+                    {'txData.resultInfo.tokenTransfers.to': address},
                 ]}
             ]}},
-            {'$unwind': '$info.result.tokenTransfers'},
+            {'$unwind': '$txData.resultInfo.tokenTransfers'},
             {'$match': {'$or': [
-                {'info.result.tokenTransfers.from': address},
-                {'info.result.tokenTransfers.to': address},
+                {'txData.resultInfo.tokenTransfers.from': address},
+                {'txData.resultInfo.tokenTransfers.to': address},
             ]}},
             {'$sort': {'createTime': -1}},
             {'$skip': (page-1)*per_page},
             {'$limit': per_page},
             {'$project': {
-             'transfer': '$info.result.tokenTransfers',
+             'transfer': '$txData.resultInfo.tokenTransfers',
              'hash': 1,
              'blockHeight': 1,
              'fee': 1,
              'createTime': 1,
              'remark': 1,
-             'gasUsed': '$info.result.gasUsed',
-             'price': '$info.result.price',
-             'totalFee': '$info.result.totalFee',
-             'nonce': '$info.result.nonce'
+             'gasUsed': '$txData.resultInfo.gasUsed',
+             'price': '$txData.resultInfo.price',
+             'totalFee': '$txData.resultInfo.totalFee',
+             'nonce': '$txData.resultInfo.nonce'
              }}
         ])
         transactions = [b async for b in transactions]
@@ -488,12 +484,12 @@ async def view_address(request):
             {'$match': {'$and': [
                 {'type': {'$in': [100, 101]}},
                 {'$or': [
-                    {'info.result.tokenTransfers.from': address},
-                    {'info.result.tokenTransfers.to': address},
+                    {'txData.resultInfo.tokenTransfers.from': address},
+                    {'txData.resultInfo.tokenTransfers.to': address},
                 ]}
             ]}},
             {'$group': {'_id': None, 'count':
-                        {'$sum': {'$size': '$info.result.tokenTransfers'}}}}
+                        {'$sum': {'$size': '$txData.resultInfo.tokenTransfers'}}}}
         ])
         if await total_count.fetch_next:
             tx_count = total_count.next_object()['count']
@@ -595,7 +591,7 @@ async def address_consensus(request):
 
     async for tx in Transaction.collection.find(where_query,
                                                 sort=[('createTime', 1)]):
-        info = tx.get('info', {})
+        info = tx.get('txData', {})
         if tx['type'] == 4:  # registering a consensus node
             position = {
                 'type': 'node',
@@ -609,7 +605,7 @@ async def address_consensus(request):
         elif tx['type'] == 5:  # join a consensus
             position = {
                 'type': 'stake',
-                'value': info.get('deposit', 0),
+                'value': info.get('amount', 0),
                 'agentHash': info.get('agentHash'),
                 'hash': tx['hash'],
                 'active': True
@@ -617,7 +613,7 @@ async def address_consensus(request):
             positions.append(position)
 
         elif tx['type'] == 6: # cancel a consensus
-            join_hash = info.get('joinTxHash')
+            join_hash = info.get('txHash')
             try:
                 position = next(pos for pos in positions
                                 if pos['hash'] == join_hash)
