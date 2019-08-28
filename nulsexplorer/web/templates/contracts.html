@@ -31,18 +31,18 @@
     {% for transaction in contract_creations %}
     <tr>
       <th scope="row">
-        <a href="/addresses/contracts/{{transaction.info.contractAddress}}" class="address">
-          {{transaction.info.contractAddress}}
+        <a href="/addresses/contracts/{{transaction.txData.resultInfo.contractAddress}}" class="address">
+          {{transaction.txData.resultInfo.contractAddress}}
         </a>
       </th>
       <td>
-        {{transaction.info.result and transaction.info.result.name or ''}}
+        {{transaction.txData.resultInfo and transaction.txData.tokenName or ''}}
       </td>
       <td>
-        {{transaction.info.result and transaction.info.result.symbol or ''}}
+        {{transaction.txData.resultInfo and transaction.txData.symbol or ''}}
       </td>
       <td>
-        {{transaction.blockHeight}}
+        {{transaction.height}}
       </td>
     </tr>
     {% endfor %}
