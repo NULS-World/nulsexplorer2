@@ -49,9 +49,7 @@ async def addresses_unspent_txs(last_block_height, check_time=None,
                 [{'coinTos.address': {'$in': address_list}},
                  {'coinFroms.address': {'$in': address_list}}]
             }
-        match_step_post['$match'] = {
-            'transfers.address': {'$in': address_list}
-        }
+        match_step_post['$match']['transfers.address'] = {'$in': address_list}
     
 
     aggregate = Transaction.collection.aggregate(
