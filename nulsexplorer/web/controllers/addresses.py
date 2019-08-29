@@ -301,22 +301,24 @@ async def address_list(request):
         per_page = 10000
         sort = [('-id', 1)]
         data = await request.json()
-        address_list = data.get('addresses', None)
+        address_list = data.get('addresses', [])
         page = data.get('page', 1)
     else:
-        address_list = request.query.getall('addresses[]', None)
+        address_list = request.query.getall('addresses[]', [])
         page = int(request.match_info.get('page', '1'))
         
-    addresses = await addresses_unspent_txs(last_height, address_list=address_list)
+    # addresses = await addresses_unspent_txs(last_height, address_list=address_list)
 
-    # if len(address_list):
-    #     addresses = db.cached_unspent.find(
-    #         {'_id': {'$in': address_list}},
-    #         skip=(page-1)*per_page, limit=per_page, sort=sort)
-    # else:
-    #     addresses = db.cached_unspent.find(skip=(page-1)*per_page,
-    #                                        limit=per_page, sort=sort)
-    # addresses = [addr async for addr in addresses]
+    if len(address_list):
+        addresses = db.cached_unspent.find(
+            {'_id': {'$in': address_list}},
+            skip=(page-1)*per_page, limit=per_page, sort=sort)
+    else:
+        addresses = db.cached_unspent.find(skip=(page-1)*per_page,
+                                           limit=per_page, sort=sort)
+    addresses = [addr async for addr in addresses]
+    # total_addresses = len(addresses)
+    # addresses = addresses[(page-1)*per_page:(page-1)*per_page+per_page]
 
     pagination = Pagination(page, PER_PAGE_SUMMARY, total_addresses)
 
