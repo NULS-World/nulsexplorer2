@@ -53,19 +53,16 @@ Defaults:
 
 ```yaml
 nuls:
-  host: 127.0.0.1
-  port: 6001
-  path: /api/
-  base_uri: "http://127.0.0.1:6001/api/"
-  chain_id: 8964
+  base_uri: "hhttp://beta.wallet.nuls.io/api/"
+  chain_id: 2
 ```
 
-This part is about your connection to the nuls client to retrieve the blocks
+This part is about your connection to the nuls api server to retrieve the blocks
 and other informations about the nuls blockchain.
 Most of the arguments there are self-explaining, except chain_id.
 
-`chain_id` is the chain you are addressing, NULS mainnet is 8964 for the Ns prefix.
-Other networks (like testnets or side chains) might have other chain_id.
+`chain_id` is the chain you are addressing, NULS mainnet is 1 for the NULS prefix.
+Other networks (like testnet 2 with tNULS, or side chains) might have other chain_id.
 This will define the address that will be generated from a public key.
 
 ### `mongodb`
