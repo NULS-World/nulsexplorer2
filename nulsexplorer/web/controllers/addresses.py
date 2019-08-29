@@ -27,95 +27,110 @@ async def cache_last_block_height():
 @cached(ttl=60*120, cache=SimpleMemoryCache, timeout=120)
 # 60*120 seconds or 2 hours minutes, 120 seconds timeout
 async def addresses_unspent_txs(last_block_height, check_time=None,
-                                address_list=None, output_collection=None):
+                                address_list=None, output_collection=None,
+                                asset_symbol='NULS'):
     if check_time is None:
         check_time = datetime.datetime.now()
 
-    match_step_post = {'$match': {'outputs.status': {'$lt': 3}}}
-    match_step_pre = {'$match': {
-        'outputs': {
-            '$elemMatch': {
-                'status': {'$lt': 3}
-            }
-        }
+    match_step_pre = {'$match': {}}
+    match_step_post = {'$match': {
+        'transfers.symbol': asset_symbol
     }}
     
-    if address_list is not None:
-        if len(address_list) > 1:
-            match_step_post['$match']['outputs.address'] = \
-                {'$in': address_list}
-            match_step_pre['$match']['outputs']['$elemMatch']['address'] = \
-                {'$in': address_list}
-        else:
-            match_step_post['$match']['outputs.address'] = address_list[0]
-            match_step_pre['$match']['outputs']['$elemMatch']['address'] = \
-                address_list[0]
-    #     matches.append({
-    #         '$match': {'outputs.address': {'$in': address_list}}
-    #     })
-
     outputs = []
     if output_collection is not None:
         outputs = [{
             '$out': output_collection
         }]
+    
+    if address_list is not None:
+        match_step_pre['$match'] = \
+            {'$or': 
+                [{'coinTos.address': {'$in': address_list}},
+                 {'coinFroms.address': {'$in': address_list}}]
+            }
+        match_step_post['$match'] = {
+            'transfers.address': {'$in': address_list}
+        }
+    
 
     aggregate = Transaction.collection.aggregate(
         [match_step_pre] +
         [{'$project': {
-            'outputs': 1
-        }}] + [{'$unwind': '$outputs'}] + [match_step_post] + [
-        {'$group': {'_id': '$outputs.address',
+            'coinTos': 1,
+            'coinFroms': 1
+        }}] + [
+        {'$addFields':
+            {"coinFroms": {
+                "$map": {
+                    "input": {'$ifNull': ['$coinFroms', []]},
+                    "as": "row",
+                    "in": {
+                        "id": "$$row.id",
+                        "address": "$$row.address",
+                        "lockTime": "$$row.locked",
+                        "symbol": "$$row.symbol",
+                        "amount": { "$multiply": [
+                            -1, 
+                            "$$row.amount"
+                        ]}
+                    }
+                }
+            }}
+        },
+        {'$addFields':
+            {"transfers": {
+                '$concatArrays': [
+                    {'$ifNull': ['$coinFroms', []]},
+                    {'$ifNull': ['$coinTos', []]}
+                ]}
+            }
+        },
+        {'$unwind': '$transfers'},
+        match_step_post,
+        {'$group': {'_id': '$transfers.address',
                     'unspent_count': {'$sum': 1},
-                    'unspent_value': {'$sum': '$outputs.value'},
+                    'unspent_value': {'$sum': '$transfers.amount'},
                     'consensus_locked_value': {'$sum': {"$cond": [
                         {"$and": [
-                            {"$lt": [
-                                "$outputs.status",
-                                3
-                            ]},
                             {"$eq": [
-                                "$outputs.lockTime",
+                                "$transfers.lockTime",
                                 -1
                             ]}
                         ]},
-                        "$outputs.value",
+                        "$transfers.amount",
                         0
                     ]}},
                     'time_locked_value': {'$sum': {"$cond": [
                         {"$and": [
-                            {"lt": [
-                                "$outputs.status",
-                                3
-                            ]},
                             {"$gt": [
-                                "$outputs.lockTime",
+                                "$transfers.lockTime",
                                 0
                             ]},
                             {"$or": [
                                 {"$and": [
                                     {"$lt": [
-                                        "$outputs.lockTime",
-                                        1000000000000
+                                        "$transfers.lockTime",
+                                        1000000000
                                     ]},
                                     {"$gt": [
-                                        "$outputs.lockTime",
+                                        "$transfers.lockTime",
                                         last_block_height
                                     ]}
                                 ]},
                                 {"$and": [
                                     {"$gt": [
-                                        "$outputs.lockTime",
-                                        1000000000000
+                                        "$transfers.lockTime",
+                                        1000000000
                                     ]},
                                     {"$gt": [
-                                        "$outputs.lockTime",
-                                        int(time.mktime(check_time.timetuple())*1000)
+                                        "$transfers.lockTime",
+                                        int(time.mktime(check_time.timetuple()))
                                     ]}
                                 ]},
                             ]}
                         ]},
-                        "$outputs.value",
+                        "$transfers.amount",
                         0
                     ]}}
                     }},
@@ -291,7 +306,7 @@ async def address_list(request):
     else:
         address_list = request.query.getall('addresses[]', None)
         page = int(request.match_info.get('page', '1'))
-
+        
     addresses = await addresses_unspent_txs(last_height, address_list=address_list)
 
     # if len(address_list):
