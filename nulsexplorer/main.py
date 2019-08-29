@@ -101,7 +101,7 @@ async def check_blocks():
                     
                     last_stored_height = block_height
 
-                    if i > 2000:
+                    if i > 10000:
                         break
 
                 if big_batch:
