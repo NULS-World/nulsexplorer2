@@ -451,16 +451,16 @@ async def view_address(request):
         token_holdings = await get_address_tokens(address)
         transactions = Transaction.collection.aggregate([
             {'$match': {'$and': [
-                {'type': {'$in': [100, 101]}},
+                {'type': {'$in': [15,16]}},
                 {'$or': [
-                    {'txData.resultInfo.tokenTransfers.from': address},
-                    {'txData.resultInfo.tokenTransfers.to': address},
+                    {'txData.resultInfo.tokenTransfers.fromAddress': address},
+                    {'txData.resultInfo.tokenTransfers.toAddress': address},
                 ]}
             ]}},
             {'$unwind': '$txData.resultInfo.tokenTransfers'},
             {'$match': {'$or': [
-                {'txData.resultInfo.tokenTransfers.from': address},
-                {'txData.resultInfo.tokenTransfers.to': address},
+                {'txData.resultInfo.tokenTransfers.fromAddress': address},
+                {'txData.resultInfo.tokenTransfers.toAddress': address},
             ]}},
             {'$sort': {'createTime': -1}},
             {'$skip': (page-1)*per_page},
