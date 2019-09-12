@@ -141,7 +141,7 @@ async def view_agents(request):
     total_deposit = sum([a['totalDeposit'] + a['deposit'] for a in consensus['agents']])
     active_count = len([a for a in consensus['agents'] if a['status'] == 1])
 
-    agents = {agent['agentHash']: agent for agent in consensus['agents']}
+    agents = {agent['txHash']: agent for agent in consensus['agents']}
 
     context = {
             'agents': agents,
