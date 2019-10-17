@@ -105,7 +105,10 @@ async def process_block_height(server, chain_id, height,
                             batch_blocks=batch_blocks,
                             batch_transactions=batch_transactions)
     except ProtocolError:
-        LOGGER.exception("Can't get height %d!!!!!!" % height)
+        if big_batch:
+            LOGGER.exception("Can't get height %d!!!!!!" % height)
+        else:
+            raise
 
 async def check_blocks():
     chain_id = app['config'].nuls.chain_id.value
