@@ -97,12 +97,15 @@ async def request_consensus(server, chain_id):
 async def process_block_height(server, chain_id, height,
                                big_batch, batch_blocks, batch_transactions):
     LOGGER.info("Synchronizing block #%d" % height)
-    block = await request_block(server, chain_id, height=height)
-    # if we are working on a big batch, don't save in db yet
-    # add to a big dict instead
-    await store_block(block, big_batch=big_batch,
-                        batch_blocks=batch_blocks,
-                        batch_transactions=batch_transactions)
+    try:
+        block = await request_block(server, chain_id, height=height)
+        # if we are working on a big batch, don't save in db yet
+        # add to a big dict instead
+        await store_block(block, big_batch=big_batch,
+                            batch_blocks=batch_blocks,
+                            batch_transactions=batch_transactions)
+    except ProtocolError:
+        LOGGER.exception("Can't get height %d!!!!!!" % height)
 
 async def check_blocks():
     chain_id = app['config'].nuls.chain_id.value
