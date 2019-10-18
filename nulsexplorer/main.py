@@ -111,6 +111,7 @@ async def process_block_height(server, chain_id, height,
             raise
 
 async def check_blocks():
+    from .jobs import update_missing_join
     chain_id = app['config'].nuls.chain_id.value
     
     last_stored_height = await get_last_block_height(chain_id=chain_id)
@@ -169,6 +170,11 @@ async def check_blocks():
             last_stored_height = await get_last_block_height(chain_id=chain_id)
         finally:
             await server.session.close()
+            
+        try:
+            await update_missing_join()
+        except:
+            LOGGER.exception("Error in tx postprocess")
             
         if not big_batch:
             # we sleep only if we are not in the middle of a big batch
