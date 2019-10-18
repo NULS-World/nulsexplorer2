@@ -221,7 +221,7 @@ async def summarize_tx(tx, pov, node_mode=False):
 
         tx['value'] = inputs[0]['amount']
         if node_mode:
-            tx['value'] = tx['amount']*-1
+            tx['value'] = inputs[0]['amount']*-1
             
     else:
         if len(inputs) == 1:
