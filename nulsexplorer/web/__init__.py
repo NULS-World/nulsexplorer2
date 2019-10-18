@@ -51,7 +51,8 @@ env.globals.update({
     'float': float,
     'len': len,
     'TRANSACTION_TYPES': TRANSACTION_TYPES,
-    'pprint': pprint
+    'pprint': pprint,
+    'bytes': bytes
 })
 
 #bottle.TEMPLATE_PATH.insert(0,tpl_path)
