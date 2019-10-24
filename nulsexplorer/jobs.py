@@ -3,6 +3,8 @@ import aiocron
 import asyncio
 from datetime import date, time, timezone, datetime, timedelta
 from nulsexplorer.modules.register import register_batch_hook, register_block_hook
+# import the oracle jobs for their hooks
+import nulsexplorer.oracle.jobs
 
 LOGGER = getLogger("JOBS")
 
