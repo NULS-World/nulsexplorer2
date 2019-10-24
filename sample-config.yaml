@@ -10,3 +10,8 @@ nuls:
 mongodb:
   uri: "mongodb://127.0.0.1:27017"
   database: nuls2test
+
+aleph_client:
+  enabled: True
+  private_key: null
+  api_server: https://api1.aleph.im
