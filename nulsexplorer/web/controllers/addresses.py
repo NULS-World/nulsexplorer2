@@ -367,9 +367,7 @@ async def get_address_tokens(holder_address):
         {'$addFields': {
          'transfers': {'$concatArrays': [
             [['$txData.resultInfo.tokenTransfers.fromAddress',
-              {"$multiply": [-1,
-                             {'$toDouble':
-                              "$txData.resultInfo.tokenTransfers.value"}]}]],
+                {'$toDouble': {"$concat": ["-", "$txData.resultInfo.tokenTransfers.value"]}}]],
             [['$txData.resultInfo.tokenTransfers.toAddress',
               {'$toDouble': "$txData.resultInfo.tokenTransfers.value"}]],
             ]}

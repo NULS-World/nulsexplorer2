@@ -112,9 +112,7 @@ async def view_contract(request):
             {'$addFields': {
              'transfers': {'$concatArrays': [
                 [['$txData.resultInfo.tokenTransfers.fromAddress',
-                  {"$multiply": [-1,
-                                 {'$toDouble':
-                                  "$txData.resultInfo.tokenTransfers.value"}]}]],
+                  {'$toDouble': {"$concat": ["-", "$txData.resultInfo.tokenTransfers.value"]}}]],
                 [['$txData.resultInfo.tokenTransfers.toAddress',
                   {'$toDouble': "$txData.resultInfo.tokenTransfers.value"}]],
                 ]}
