@@ -29,6 +29,7 @@ def get_defaults():
         'aleph_client': {
             'enabled': False,
             'private_key': None,
-            'api_server': 'https://api1.aleph.im'
+            'api_server': 'https://api1.aleph.im',
+            'channel': 'NULSWORLD'
         }
     }
