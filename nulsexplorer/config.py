@@ -22,8 +22,13 @@ def get_defaults():
             'smtp_url': 'smtp://localhost'
         },
         'ipfs': {
-            'enabled': True,
+            'enabled': False,
             'host': '127.0.0.1',
             'port': 5001
+        },
+        'aleph_client': {
+            'enabled': False,
+            'private_key': None,
+            'api_server': 'https://api1.aleph.im'
         }
     }
