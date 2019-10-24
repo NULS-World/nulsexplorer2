@@ -5,6 +5,9 @@ TX_PREPROCESS_REGISTER = dict()
 # Post-processor is after the insertion
 TX_POSTPROCESS_REGISTER = dict()
 
+BLOCK_POSTPROCESS_REGISTER = list()
+BATCH_POSTPROCESS_REGISTER = list()
+
 # We will register here handlers for the tx types
 TX_TYPES_REGISTER = dict()
 
@@ -36,3 +39,20 @@ async def process_tx(tx, step="pre"):
 
     for handler in registry.setdefault(tx.type, []):
         await handler(tx)
+        
+def register_batch_hook(handler):
+    if handler not in BATCH_POSTPROCESS_REGISTER:
+        BATCH_POSTPROCESS_REGISTER.append(handler)
+        
+async def do_batch_postprocess(batch_blocks, batch_transactions):
+    for handler in BATCH_POSTPROCESS_REGISTER:
+        await handler(batch_blocks, batch_transactions)
+
+def register_block_hook(handler, also_in_batches=False):
+    if (also_in_batches, handler) not in BLOCK_POSTPROCESS_REGISTER:
+        BLOCK_POSTPROCESS_REGISTER.append((also_in_batches, handler))
+        
+async def do_block_postprocess(block, in_batch=True):
+    for do_in_batch, handler in BLOCK_POSTPROCESS_REGISTER:
+        if (not in_batch) or do_in_batch:
+            await handler(block)

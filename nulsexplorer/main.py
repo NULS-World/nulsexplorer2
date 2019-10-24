@@ -14,6 +14,7 @@ from nulsexplorer import model
 from nulsexplorer.model.blocks import get_last_block_height, store_block
 from nulsexplorer.model.transactions import Transaction
 from nulsexplorer.model.consensus import Consensus
+from nulsexplorer.modules.register import do_batch_postprocess, do_block_postprocess
 
 LOGGER = logging.getLogger('connector')
 
@@ -104,6 +105,11 @@ async def process_block_height(server, chain_id, height,
         await store_block(block, big_batch=big_batch,
                             batch_blocks=batch_blocks,
                             batch_transactions=batch_transactions)
+        
+        try:
+            await do_block_postprocess(block, in_batch=big_batch)
+        except:
+            LOGGER.exception("Error in block postprocess")
     except ProtocolError:
         if big_batch:
             LOGGER.exception("Can't get height %d!!!!!!" % height)
@@ -165,16 +171,17 @@ async def check_blocks():
                     await model.db.transactions.insert_many(
                         sorted(batch_transactions.values(),
                                key=operator.itemgetter('height')))
+            
+                    try:
+                        await do_batch_postprocess(batch_blocks, batch_transactions)
+                    except:
+                        LOGGER.exception("Error in batch postprocess")
+                        
         except:
             LOGGER.exception("Error in sync")
             last_stored_height = await get_last_block_height(chain_id=chain_id)
         finally:
             await server.session.close()
-            
-        try:
-            await update_missing_join()
-        except:
-            LOGGER.exception("Error in tx postprocess")
             
         if not big_batch:
             # we sleep only if we are not in the middle of a big batch

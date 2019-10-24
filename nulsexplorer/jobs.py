@@ -2,6 +2,7 @@ from logging import getLogger
 import aiocron
 import asyncio
 from datetime import date, time, timezone, datetime, timedelta
+from nulsexplorer.modules.register import register_batch_hook, register_block_hook
 
 LOGGER = getLogger("JOBS")
 
@@ -39,7 +40,7 @@ async def update_leave_tx(tx_info):
             }
         })
     
-async def update_missing_join():
+async def update_missing_join(*args, **kwargs):
     from nulsexplorer.model.transactions import Transaction
     filters = {
         'type': 6, # TODO: handle other consensus leave (unregister, red card...)
@@ -49,6 +50,9 @@ async def update_missing_join():
         LOGGER.info("Updating missing join %d txs" % count)
         async for tx in Transaction.collection.find(filters, projection=['hash', 'coinFroms']):
             await update_leave_tx(tx)
+
+register_batch_hook(update_missing_join)
+register_block_hook(update_missing_join, also_in_batches=False)
 
 def start_jobs():
     update_addresses_balances.start()
