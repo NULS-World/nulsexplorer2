@@ -1,13 +1,16 @@
 from nulsexplorer import model
+
 from nulsexplorer.model.base import BaseClass, Index
 from nulsexplorer.model.transactions import Transaction
 import pymongo
 import logging
 import operator
 LOGGER = logging.getLogger('model.blocks')
+import copy
 
 async def store_block(block_data, big_batch=False,
                       batch_blocks=None, batch_transactions=None):
+    block_data = copy.deepcopy(block_data)
     txs = block_data.pop("txList")
     if batch_transactions is None:
         batch_transactions = dict()
