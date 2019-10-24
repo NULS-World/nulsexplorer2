@@ -63,6 +63,47 @@ app.router.add_get('/addresses/contracts.json', contracts_list)
 app.router.add_get('/addresses/contracts/page/{page}', contracts_list)
 app.router.add_get('/addresses/contracts/page/{page}.json', contracts_list)
 
+
+async def get_holders(contract_address, pagination=False,
+                      per_page=100, page=1):
+    aggregate = [
+        {'$match': {
+            'txData.contractAddress': contract_address,
+            'txData.resultInfo.tokenTransfers': {'$exists': True, '$ne': []}
+        }},
+        {'$unwind': '$txData.resultInfo.tokenTransfers'},
+        {'$addFields': {
+            'transfers': {'$concatArrays': [
+            [['$txData.resultInfo.tokenTransfers.fromAddress',
+                {'$toDouble': {"$concat": ["-", "$txData.resultInfo.tokenTransfers.value"]}}]],
+            [['$txData.resultInfo.tokenTransfers.toAddress',
+                {'$toDouble': "$txData.resultInfo.tokenTransfers.value"}]],
+            ]}
+            }},
+        {'$unwind': '$transfers'},
+        {'$project': {
+            'transfers': 1
+        }},
+        # { "$group" : { "_id" : "$transfers.0", "balance" : { "$sum" : "$transfers.1" } } }
+        {"$group": {
+            "_id": {'$arrayElemAt': ["$transfers", 0]},
+            "balance": {"$sum": {'$arrayElemAt': ["$transfers", 1]}}
+            }},
+        {'$match': {
+            '_id': {'$ne': None}
+        }},
+        {'$sort': {'balance': -1}}
+    ]
+    if pagination:
+        aggregate.extend([
+            {'$skip': (page-1)*per_page},
+            {'$limit': per_page}
+        ])
+    holders = Transaction.collection.aggregate(aggregate)
+    holders = [b async for b in holders]
+    return holders
+
+
 async def view_contract(request):
     from .addresses import (addresses_unspent_info, summarize_tx)
 
@@ -103,37 +144,7 @@ async def view_contract(request):
 
     if mode == "holders":
         pagination_item = 'holders'
-        holders = Transaction.collection.aggregate([
-            {'$match': {
-                'txData.contractAddress': address,
-                'txData.resultInfo.tokenTransfers': {'$exists': True, '$ne': []}
-            }},
-            {'$unwind': '$txData.resultInfo.tokenTransfers'},
-            {'$addFields': {
-             'transfers': {'$concatArrays': [
-                [['$txData.resultInfo.tokenTransfers.fromAddress',
-                  {'$toDouble': {"$concat": ["-", "$txData.resultInfo.tokenTransfers.value"]}}]],
-                [['$txData.resultInfo.tokenTransfers.toAddress',
-                  {'$toDouble': "$txData.resultInfo.tokenTransfers.value"}]],
-                ]}
-             }},
-            {'$unwind': '$transfers'},
-            {'$project': {
-                'transfers': 1
-            }},
-            # { "$group" : { "_id" : "$transfers.0", "balance" : { "$sum" : "$transfers.1" } } }
-            {"$group": {
-             "_id": {'$arrayElemAt': ["$transfers", 0]},
-             "balance": {"$sum": {'$arrayElemAt': ["$transfers", 1]}}
-             }},
-            {'$match': {
-                '_id': {'$ne': None}
-            }},
-            {'$sort': {'balance': -1}},
-            {'$skip': (page-1)*per_page},
-            {'$limit': per_page}
-        ])
-        holders = [b async for b in holders]
+        holders = await get_holders(address, pagination=True, per_page=per_page, page=page)
 
         total_count = Transaction.collection.aggregate([
             {'$match': {
