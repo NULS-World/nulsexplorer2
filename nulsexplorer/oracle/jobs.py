@@ -9,17 +9,24 @@ async def block_event(block):
         'block': block
     }, 'new_block')
     
-register_block_hook(block_event, also_in_batches=False)
+# register_block_hook(block_event, also_in_batches=False)
 
 async def nrc20_transfer_event(block):
     for transaction in block['txList']:
         if transaction.get('type') in [1,2]:
             continue
-        transfers = transaction.get('txData', dict())\
-            .get('resultInfo', dict())\
-            .get('tokenTransfers', list())
+        
+        txData = transaction.get('txData', None)
+        if txData is None:
+            continue
+        
+        resultInfo = txData.get('resultInfo', None)
+        if resultInfo is None:
+            continue
+        
+        transfers = resultInfo.get('tokenTransfers', None)
             
-        if len(transfers):
+        if transfers is not None and len(transfers):
             await broadcast_event({
                 'transaction': transaction
             }, 'token_transfer')
@@ -27,7 +34,7 @@ async def nrc20_transfer_event(block):
             for addr in set([t['contractAddress'] for t in transfers]):
                 await update_nrc20_holders(addr)
     
-register_block_hook(block_event, also_in_batches=False)
+register_block_hook(nrc20_transfer_event, also_in_batches=False)
 
 async def update_nrc20_holders(contract_address):
     from nulsexplorer.web.controllers.contracts import get_holders
