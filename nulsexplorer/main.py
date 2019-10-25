@@ -24,7 +24,10 @@ class Server(jsonrpc_base.Server):
 
     def __init__(self, url, session=None, *, loads=None, content_type=-1, **post_kwargs):
         super().__init__()
-        object.__setattr__(self, 'session', session or aiohttp.ClientSession())
+        if session is None:
+            conn = aiohttp.TCPConnector(limit=200)
+            session = aiohttp.ClientSession(connector=conn)
+        object.__setattr__(self, 'session', session)
         post_kwargs['headers'] = post_kwargs.get('headers', {})
         post_kwargs['headers']['Content-Type'] = post_kwargs['headers'].get(
             'Content-Type', 'application/json')
