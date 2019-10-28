@@ -22,11 +22,11 @@ async def view_staking_rewards(request):
     per_year = per_day * 365
 
     context = {
-      'per_nuls': per_nuls,
-      'per_block': per_block,
-      'per_day': per_day,
-      'per_month': per_month,
-      'per_year': per_year
+        'per_nuls': per_nuls,
+        'per_block': per_block,
+        'per_day': per_day,
+        'per_month': per_month,
+        'per_year': per_year
     }
 
     return cond_output(request, context, '')
@@ -38,44 +38,46 @@ async def get_all_deposits_txs():
     """ Returns the number of all stakers and the amount staked by each one
     """
     all_txs = Transaction.collection.find({
-      'type': 5, # join consensus
-      'outputs.status': {'$lt': 3},
-      'outputs.lockTime': -1
+        'type': {'$in': [5,6]} # join consensus
     }, projection={
-      'outputs.status': 1,
-      'outputs.value': 1,
-      'outputs.lockTime': 1,
-      'outputs.address': 1
+        'type': 1,
+        'coinFroms.address': 1,
+        'coinFroms.amount': 1,
+        'coinFroms.locked': 1,
+        'coinTos.address': 1,
+        'coinTos.amount': 1,
+        'coinTos.lockTime': 1
     })
 
     count = 0
     stakers = {}
 
     async for tx in all_txs:
-        for output in tx['outputs']:
-            lock_time = output['lockTime']
-            address = output['address'] 
-            value = output['value']
+        if tx['type'] == 5: # join
+            value = tx['coinTos'][0]['amount']
+            address = tx['coinTos'][0]['address']
+            lock_time = tx['coinTos'][0]['lockTime']
+        elif tx['type'] == 6: # leave
+            value = tx['coinFroms'][0]['amount'] * -1
+            address = tx['coinFroms'][0]['address']
+            lock_time = tx['coinFroms'][0]['locked']
 
-            if output['status'] >= 3:
-                continue  # spent
+        if lock_time != -1:
+            continue  # not consensus locked
 
-            if lock_time != -1:
-                continue  # not consensus locked
+        if abs(value) < 200000000000: # minimum staking amount
+            raise ValueError("Consensus deposit with less than 2k")
+            continue  # something went wrong
 
-            if value < 200000000000: # minimum staking amount
-                raise ValueError("Consensus deposit with less than 2k")
-                continue  # something went wrong
-
-            if stakers.get(address, None) is None:
-              count += 1
-              stakers[address] = 0
-            
-            stakers[address] += (value / 10**8)
+        if stakers.get(address, None) is None:
+            count += 1
+            stakers[address] = 0
+        
+        stakers[address] += (value / 10**8)
 
     return  {
-      'count': count,
-      'stakers': stakers
+        'count': count,
+        'stakers': stakers
     }
 
 async def view_stakers_list(request):
@@ -92,12 +94,12 @@ async def view_stakers_list(request):
 
     for k, v in stakers.items():
         if v >= min_staked_amount:
-          filtered_count += 1
-          filtered_stakers[k] = v
+            filtered_count += 1
+            filtered_stakers[k] = v
 
     context = {
-      'count': filtered_count,
-      'stakers': filtered_stakers
+        'count': filtered_count,
+        'stakers': filtered_stakers
     }
 
     return cond_output(request, context, '')
